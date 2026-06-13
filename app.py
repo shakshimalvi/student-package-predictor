@@ -17,31 +17,29 @@ st.title("📊 Student Package Predictor PRO")
 if "history" not in st.session_state:
     st.session_state.history = pd.DataFrame(columns=["CGPA", "Predicted Package"])
 
-# -----------------------------
-# LOAD DATA
-# -----------------------------
 st.sidebar.subheader("📂 Upload Dataset")
-file_path = st.sidebar.text_input("Enter CSV Path")
 
-df = None
+uploaded_file = st.sidebar.file_uploader("Upload CSV file", type=["csv"])
 
-if file_path:
-    try:
-        df = pd.read_csv(file_path)
-        st.success("Dataset Loaded")
-    except:
-        st.error("Invalid file path")
-
-if df is None:
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    st.success("Dataset Loaded Successfully!")
+else:
+    st.info("Upload a CSV file to start analysis")
     st.stop()
-
 st.dataframe(df, use_container_width=True)
 
-# -----------------------------
-# SPLIT DATA (Actual vs Predicted)
-# -----------------------------
-y_test = df.iloc[:, 0]
-y_pred = df.iloc[:, 1]
+
+
+# Auto-detect numeric columns
+numeric_df = df.select_dtypes(include=[np.number])
+
+if numeric_df.shape[1] < 2:
+    st.error("❌ Dataset must have at least 2 numeric columns")
+    st.stop()
+
+y_test = numeric_df.iloc[:, 0]
+y_pred = numeric_df.iloc[:, 1]
 
 # -----------------------------
 # METRICS
@@ -61,7 +59,6 @@ c3.metric("RMSE", f"{rmse:.2f}")
 # 📈 PLOT 1: ACTUAL VS PREDICTED
 # -----------------------------
 st.subheader("📈 Actual vs Predicted")
-
 fig, ax = plt.subplots()
 ax.scatter(y_test, y_pred)
 ax.plot([y_test.min(), y_test.max()],
